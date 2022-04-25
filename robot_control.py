@@ -1,7 +1,7 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 from ast import increment_lineno
 from sre_constants import SUCCESS
-import rospy 
+import rospy
 import numpy as np
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float32
@@ -10,10 +10,10 @@ class SquareClass():
     '''
         This class will make a puzzlebot follow a 1 m square
     '''
-    def __init__(self): 
+    def __init__(self):
         # Callback fuction when the node is turned off
-        rospy.on_shutdown(self.cleanup) 
-        ############ CONSTANTS ################ 
+        rospy.on_shutdown(self.cleanup)
+        ############ CONSTANTS ################
         self.msg = Twist() # Mesage to be send
         self.wr = 0
         self.wl = 0
@@ -24,36 +24,38 @@ class SquareClass():
         dy = 0 # Distance in Y
         theta = 0 # Angular Distance
         Dt = 1/float(rate) # Dt is the time between one calculation and the next one
+
         goal_x = [1.6,-0.8,0,0,-0.8]
         goal_y = [0,0,0.8,-1.2,-0.8]
         index = 1
         success = False
-        ###******* INIT PUBLISHERS *******### 
+
+        ###******* INIT PUBLISHERS *******###
         self.pub_move = rospy.Publisher('cmd_vel', Twist, queue_size=1)
-        ###******* INIT SUSCRIBERS *******### 
+        ###******* INIT SUSCRIBERS *******###
         rospy.Subscriber('wl',Float32,self.wl_cb)
         rospy.Subscriber('wr',Float32,self.wr_cb)
-        #********** INIT NODE **********### 
-        r = rospy.Rate(rate) #1Hz 
+        #********** INIT NODE **********###
+        r = rospy.Rate(rate) #1Hz
         print("Node initialized " + str(rate)+ " hz")
         while not rospy.is_shutdown():
             v = (wRad*(self.wr + self.wl))/2
             w = (wRad*(self.wr - self.wl))/L # All in radians
-            theta = (w*Dt)+theta
+            theta = theta + (w*Dt)
             dx = dx + (v*(np.cos(theta))*Dt)
             dy = dy + (v*(np.sin(theta))*Dt)
 
-            #if theta > np.pi : theta = theta - (2*np.pi)
-            #elif theta < (-1*np.pi) : theta = theta + (2*np.pi)
+            if theta > np.pi : theta = theta - (2*np.pi)
+            elif theta < (-1*np.pi) : theta = theta + (2*np.pi)
 
             e_theta = (np.arctan2(goal_y[index] - dy, goal_x[index] - dx)) - theta
             e_d = np.sqrt(((goal_x[index] - dx)**2)+((goal_y[index] - dy)**2))
 
             # Control alv
-            if abs(e_d) < 0.05: 
+            if abs(e_d) < 0.05:
                 #print("Error Distancia: " + str(e_d))
                 e_d = 0
-            if abs(e_theta) < 0.5: 
+            if abs(e_theta) < 0.5:
                 #print("Error angulo: " + str(e_theta))
                 e_theta = 0
             if e_d == 0 and e_theta == 0:
@@ -90,9 +92,9 @@ class SquareClass():
     def cleanup(self):
         self.go_stop()
         print("\n-----FINALIZADO-----\n")
-############################### MAIN PROGRAM #################################### 
-if __name__ == "__main__": 
-    rospy.init_node("square_node", anonymous=True) 
+############################### MAIN PROGRAM ####################################
+if __name__ == "__main__":
+    rospy.init_node("square_node", anonymous=True)
     try:
         SquareClass()
     except rospy.ROSInterruptException:
