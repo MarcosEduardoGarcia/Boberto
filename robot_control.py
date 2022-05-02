@@ -1,6 +1,4 @@
 #!/usr/bin/env python 
-from ast import increment_lineno
-from sre_constants import SUCCESS
 import rospy 
 import numpy as np
 from geometry_msgs.msg import Twist
@@ -24,8 +22,8 @@ class SquareClass():
         dy = 0 # Distance in Y
         theta = 0 # Angular Distance
         Dt = 1/float(rate) # Dt is the time between one calculation and the next one
-        goal_x = [1.6,-0.8,0,0,-0.8]
-        goal_y = [0,0,0.8,-1.2,-0.8]
+        goal_x = [1.2,1,0,0,0.8,-0.8]
+        goal_y = [0,1,0.8,-1.2,0.8,-0.8]
         index = 1
         success = False
         ###******* INIT PUBLISHERS *******### 
@@ -40,44 +38,39 @@ class SquareClass():
             v = (wRad*(self.wr + self.wl))/2
             w = (wRad*(self.wr - self.wl))/L # All in radians
             theta = (w*Dt)+theta
+            if theta > np.pi : theta = theta - (2*np.pi)
+            elif theta < (-1*np.pi) : theta = theta + (2*np.pi)
             dx = dx + (v*(np.cos(theta))*Dt)
             dy = dy + (v*(np.sin(theta))*Dt)
-
-            #if theta > np.pi : theta = theta - (2*np.pi)
-            #elif theta < (-1*np.pi) : theta = theta + (2*np.pi)
 
             e_theta = (np.arctan2(goal_y[index] - dy, goal_x[index] - dx)) - theta
             e_d = np.sqrt(((goal_x[index] - dx)**2)+((goal_y[index] - dy)**2))
 
-            # Control alv
-            if abs(e_d) < 0.05: 
-                #print("Error Distancia: " + str(e_d))
-                e_d = 0
-            if abs(e_theta) < 0.5: 
-                #print("Error angulo: " + str(e_theta))
-                e_theta = 0
-            if e_d == 0 and e_theta == 0:
-                self.go_stop
-                print("Logre Llegar")
-                rospy.sleep(2)
-                #if index + 1 <= 4:
-                #    index += 1
             # Control Proporcional
-            vel = 2*e_d
-            giro = 2*e_theta
-
+            vel = 1*e_d
+            giro = 1*e_theta
             # Limites de Velocidad
-            if vel > 0.1: vel = 0.1
-            if giro > 0.3: giro = 0.3
+            if vel > 0.2: vel = 0.2
+            if giro > 0.2: giro = 0.2
+            
+            # Control de Errores
+            if abs(e_theta) < 0.1:
+                e_theta = 0
+                self.msg.linear.x = vel
+                if abs(e_d) < 0.1:
+                    e_d = 0
+                    e_theta = 0
+                    self.msg.linear.x = 0
+                    self.msg.angular.z = 0
 
             # Publicando las velocidades y giros ald robot
-            self.msg.linear.x = vel
+            
             self.msg.angular.z = giro
             self.pub_move.publish(self.msg)
 
             #print("Distancia en X y Y: [" + str(np.round(dx,2)) + "," + str(np.round(dy,2)) + "]")
             #print("Posicion Angular: " + str(np.round(theta,2)))
-            print("Error Angulo: "+ str(np.round(np.degrees(e_theta),2)))
+            print("Error Angulo: "+ str(np.round(e_theta,2)))
             print("Error Distancia: "+ str(np.round(e_d,2)))
             r.sleep()
     def wr_cb(self, num): self.wr = num.data
@@ -97,3 +90,24 @@ if __name__ == "__main__":
         SquareClass()
     except rospy.ROSInterruptException:
         print('\nEXECUTION COMPLETED SUCCESFULLY')
+# # Control Proporcional
+            # vel = kv*ranges
+            # giro = kw*theta
+            # # Limites de Velocidad
+            # if vel > 0.2: vel = 0.2
+            # if giro > 0.2: giro = 0.2
+            
+            # # Control de Errores
+            # if abs(theta) < 0.2:
+            #     theta = 0.0
+            #     msg.angular.z = 0
+            #     msg.linear.x = vel
+            #     if abs(ranges) < 0.2:
+            #         ranges = 0.0
+            #         theta = 0.0
+            #         msg.linear.x = ranges
+            #         msg.angular.z = theta
+            # else:
+            #     msg.angular.z = giro
+            #     msg.linear.x = 0
+            # Publicando las velocidades y giros al robot
