@@ -1,6 +1,4 @@
 #!/usr/bin/env python 
-from ast import increment_lineno
-from sre_constants import SUCCESS
 import rospy 
 import numpy as np
 from geometry_msgs.msg import Twist
@@ -66,6 +64,7 @@ class SquareClass():
                     self.msg.angular.z = 0
 
             # Publicando las velocidades y giros ald robot
+            
             self.msg.angular.z = giro
             self.pub_move.publish(self.msg)
 
@@ -91,3 +90,24 @@ if __name__ == "__main__":
         SquareClass()
     except rospy.ROSInterruptException:
         print('\nEXECUTION COMPLETED SUCCESFULLY')
+# # Control Proporcional
+            # vel = kv*ranges
+            # giro = kw*theta
+            # # Limites de Velocidad
+            # if vel > 0.2: vel = 0.2
+            # if giro > 0.2: giro = 0.2
+            
+            # # Control de Errores
+            # if abs(theta) < 0.2:
+            #     theta = 0.0
+            #     msg.angular.z = 0
+            #     msg.linear.x = vel
+            #     if abs(ranges) < 0.2:
+            #         ranges = 0.0
+            #         theta = 0.0
+            #         msg.linear.x = ranges
+            #         msg.angular.z = theta
+            # else:
+            #     msg.angular.z = giro
+            #     msg.linear.x = 0
+            # Publicando las velocidades y giros al robot
